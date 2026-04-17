@@ -1,0 +1,260 @@
+------------------------------------------------------------
+1. RSA ENCRYPTION AND DECRYPTION
+------------------------------------------------------------
+
+Mathematical Formulation:
+n   = p × q
+φ(n) = (p − 1)(q − 1)
+d   ≡ e⁻¹ mod φ(n)
+
+Encryption:
+C = m^e mod n
+
+Decryption:
+m = C^d mod n
+
+Algorithm:
+
+Key Generation:
+1. Select two large prime numbers p and q.
+2. Compute n = p × q.
+3. Compute φ(n) = (p − 1)(q − 1).
+4. Choose e such that gcd(e, φ(n)) = 1.
+5. Compute d such that (d × e) ≡ 1 mod φ(n).
+
+Encryption:
+6. Convert message M → integer m.
+7. Compute C = m^e mod n.
+
+Decryption:
+8. Compute m = C^d mod n.
+9. Convert m → original message.
+
+------------------------------------------------------------
+2. RSA DIGITAL SIGNATURE (RSA-DS)
+------------------------------------------------------------
+
+Signature:
+S = m^d mod n
+
+Verification:
+V = S^e mod n
+
+Algorithm:
+1. Generate keys as above.
+2. Compute signature S = m^d mod n.
+3. Compute V = S^e mod n.
+4. If V = m → VALID.
+
+------------------------------------------------------------
+3. ELGAMAL ENCRYPTION AND DECRYPTION
+------------------------------------------------------------
+
+Mathematical Formulation:
+y = g^x mod p
+
+Encryption:
+C1 = g^k mod p
+C2 = m × y^k mod p
+
+Decryption:
+m = C2 × (C1^x)⁻¹ mod p
+
+Algorithm:
+1. Choose p, g.
+2. Select private key x.
+3. Compute public key y = g^x mod p.
+4. Choose random k.
+5. Compute C1 = g^k mod p.
+6. Compute C2 = m × y^k mod p.
+7. Ciphertext = (C1, C2).
+8. Compute s = C1^x mod p.
+9. Compute m = C2 × s⁻¹ mod p.
+
+------------------------------------------------------------
+4. ELGAMAL DIGITAL SIGNATURE
+------------------------------------------------------------
+
+Mathematical Formulation:
+r = g^k mod p
+s = k⁻¹ (m − x·r) mod (p − 1)
+
+Verification:
+g^m mod p = (y^r × r^s) mod p
+
+Algorithm:
+1. Choose p, g, x.
+2. Compute y = g^x mod p.
+3. Choose k.
+4. Compute r and s.
+5. Verify using equation.
+
+------------------------------------------------------------
+5. DIGITAL SIGNATURE ALGORITHM (DSA)
+------------------------------------------------------------
+
+Mathematical Formulation:
+r = (g^k mod p) mod q
+s = k⁻¹ (m + x·r) mod q
+
+Verification:
+w  = s⁻¹ mod q
+u1 = m·w mod q
+u2 = r·w mod q
+v = ((g^u1 × y^u2) mod p) mod q
+
+Algorithm:
+1. Choose p, q, g.
+2. Select private key x.
+3. Compute public key y.
+4. Choose k.
+5. Compute r, s.
+6. Compute w, u1, u2.
+7. Compute v.
+8. If v = r → VALID.
+
+------------------------------------------------------------
+6. ECC DIGITAL SIGNATURE (ECDSA)
+------------------------------------------------------------
+
+Mathematical Formulation:
+Q = dG
+r = x1 mod n
+s = k⁻¹ (m + d·r) mod n
+
+Verification:
+w = s⁻¹ mod n
+u1 = m·w mod n
+u2 = r·w mod n
+X = u1·G + u2·Q
+
+Algorithm:
+1. Choose curve and base point G.
+2. Select private key d.
+3. Compute Q = dG.
+4. Choose k.
+5. Compute r, s.
+6. Verify using point addition.
+
+------------------------------------------------------------
+7. MD5 HASH FUNCTION
+------------------------------------------------------------
+
+Algorithm:
+1. Pad message to 448 mod 512.
+2. Append 64-bit length.
+3. Divide into 512-bit blocks.
+4. Initialize A, B, C, D.
+5. Perform 64 rounds using F, G, H, I.
+6. Output 128-bit hash.
+
+------------------------------------------------------------
+8. SHA-1 HASH FUNCTION
+------------------------------------------------------------
+
+Algorithm:
+1. Pad message to 448 mod 512.
+2. Append length.
+3. Divide into blocks.
+4. Perform 80 rounds.
+5. Output 160-bit hash.
+
+------------------------------------------------------------
+9. SHA-512 HASH FUNCTION
+------------------------------------------------------------
+
+Algorithm:
+1. Pad to 896 mod 1024.
+2. Append length.
+3. Divide into blocks.
+4. Expand to 80 words.
+5. Perform 80 rounds.
+6. Output 512-bit hash.
+
+------------------------------------------------------------
+10. HILL CIPHER
+------------------------------------------------------------
+
+Formula:
+C = K × P mod 26
+P = K⁻¹ × C mod 26
+
+Algorithm:
+1. Convert text → numbers.
+2. Divide into blocks.
+3. Multiply with key matrix.
+4. Apply mod 26.
+5. Convert back.
+
+------------------------------------------------------------
+11. AFFINE CIPHER
+------------------------------------------------------------
+
+Formula:
+C = (aP + b) mod 26
+P = a⁻¹ (C − b) mod 26
+
+Algorithm:
+1. Choose a, b.
+2. Convert text.
+3. Apply formula.
+4. Convert back.
+
+------------------------------------------------------------
+12. VIGENÈRE CIPHER
+------------------------------------------------------------
+
+Formula:
+Ci = (Pi + Ki) mod 26
+
+Algorithm:
+1. Repeat key.
+2. Add mod 26.
+3. Subtract for decryption.
+
+------------------------------------------------------------
+13. SUBSTITUTION CIPHER
+------------------------------------------------------------
+
+Formula:
+C = f(P)
+
+Algorithm:
+1. Create mapping.
+2. Replace letters.
+3. Reverse mapping.
+
+------------------------------------------------------------
+14. DIFFIE–HELLMAN (2-PARTY)
+------------------------------------------------------------
+
+Formula:
+A = g^a mod p
+B = g^b mod p
+K = g^(ab) mod p
+
+Algorithm:
+1. Choose p, g.
+2. Exchange A, B.
+3. Compute shared key.
+
+------------------------------------------------------------
+15. DIFFIE–HELLMAN (3-PARTY)
+------------------------------------------------------------
+
+Formula:
+K = g^(abc) mod p
+
+Algorithm:
+1. Compute A, B, C.
+2. Exchange values.
+3. Compute shared key.
+
+------------------------------------------------------------
+16. DIFFIE–HELLMAN MITM ATTACK
+------------------------------------------------------------
+
+Algorithm:
+1. Attacker intercepts A, B.
+2. Sends fake key.
+3. Both compute compromised keys.
