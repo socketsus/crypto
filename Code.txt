@@ -1,0 +1,1080 @@
+Crypto Code Bundle
+Generated: 2026-04-17 06:53:39
+
+
+============================================================
+FILE: AffineCipher.py
+============================================================
+
+ALPH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
+M = 27
+
+def char_to_num(c):
+    return ALPH.index(c)
+
+def num_to_char(n):
+    return ALPH[n % M]
+
+def egcd(a, b):
+    if a == 0:
+        return b, 0, 1
+    g, x, y = egcd(b % a, a)
+    return g, y - (b // a) * x, x
+
+def modinv(a, m):
+    g, x, y = egcd(a, m)
+    if g != 1:
+        return None
+    return x % m
+
+def encrypt(msg, a, b):
+    msg = msg.upper()
+    cipher = ""
+    for ch in msg:
+        if ch in ALPH:
+            p = char_to_num(ch)
+            c = (a * p + b) % M
+            cipher += num_to_char(c)
+        else:
+            cipher += ch
+    return cipher
+
+def decrypt(msg, a, b):
+    inv = modinv(a, M)
+    if inv is None:
+        raise ValueError(f"a = {a} has no inverse modulo {M}")
+    msg = msg.upper()
+    plain = ""
+    for ch in msg:
+        if ch in ALPH:
+            c = char_to_num(ch)
+            p = (inv * (c - b)) % M
+            plain += num_to_char(p)
+        else:
+            plain += ch
+    return plain
+
+text = input("Enter plaintext: ")
+a = int(input("Enter a: "))
+b = int(input("Enter b: "))
+
+cipher = encrypt(text, a, b)
+print("Ciphertext:", cipher)
+
+plain = decrypt(cipher, a, b)
+print("Decrypted :", plain)
+
+============================================================
+FILE: Diffie-Hellman2p.py
+============================================================
+
+# Diffie-Hellman Key Exchange 
+p = int(input("Enter a prime number (P): "))
+g = int(input("Enter a primitive root (G): "))
+
+a = int(input("Alice: Enter private key (a): "))
+b = int(input("Bob: Enter private key (b): "))
+# Public Keys
+# A = g^a mod p
+A = (g ** a) % p
+# B = g^b mod p
+B = (g ** b) % p
+print("Alice sends to Bob:", A)
+print("Bob sends to Alice:", B)
+# Shared Secret Keys
+# K_A = B^a mod p
+keyA = (B ** a) % p
+# K_B = A^b mod p
+keyB = (A ** b) % p
+print("\nShared Secrets:")
+print("Alice's Secret Key:", keyA)
+print("Bob's Secret Key:", keyB)
+
+============================================================
+FILE: Diffie-Hellman3p.py
+============================================================
+
+p = int(input("Enter a prime number (P): "))
+g = int(input("Enter a primitive root (G): "))
+
+a = int(input("Alice: Enter private key (a): "))
+b = int(input("Bob: Enter private key (b): "))
+c = int(input("Charlie: Enter private key (c): "))
+
+A = (g ** a) % p
+B = (g ** b) % p
+C = (g ** c) % p
+
+print("\nPublic Keys:")
+print("Alice sends:", A)
+print("Bob sends:", B)
+print("Charlie sends:", C)
+
+AB = (B ** a) % p
+BC = (C ** b) % p
+CA = (A ** c) % p
+
+print("\nIntermediate Keys:")
+print("Alice computes B^a mod p:", AB)
+print("Bob computes C^b mod p:", BC)
+print("Charlie computes A^c mod p:", CA)
+
+KA = (BC ** a) % p
+KB = (CA ** b) % p
+KC = (AB ** c) % p
+
+print("\nFinal Shared Secret Keys:")
+print("Alice's Secret:", KA)
+print("Bob's Secret:", KB)
+print("Charlie's Secret:", KC)
+
+============================================================
+FILE: DSA_Ds.py
+============================================================
+
+def mod_inverse(a, m):
+    for i in range(1, m):
+        if (a * i) % m == 1:
+            return i
+    return -1
+
+p = int(input("Enter prime p: "))
+q = int(input("Enter prime q: "))
+g = int(input("Enter generator g: "))
+x = int(input("Enter private key x: "))
+m = int(input("Enter message (integer): "))
+
+y = pow(g, x, p)
+
+k = int(input("Enter random k: "))
+
+r = pow(g, k, p) % q
+k_inv = mod_inverse(k, q)
+
+s = (k_inv * (m + x * r)) % q
+
+w = mod_inverse(s, q)
+
+u1 = (m * w) % q
+u2 = (r * w) % q
+
+v = (pow(g, u1, p) * pow(y, u2, p)) % p
+v %= q
+
+print("\n=== DSA ===")
+print("Public Key:", (p, q, g, y))
+print("Private Key:", x)
+print("Signature:", (r, s))
+print("Verification:", v == r)
+
+============================================================
+FILE: ECC.py
+============================================================
+
+import random
+
+p = int(input("Enter prime p: "))
+a = int(input("Enter curve parameter a: "))
+b = int(input("Enter curve parameter b: "))
+
+O = (None, None)
+
+def inverse_mod(k, p):
+    return pow(k, -1, p)
+
+def is_on_curve(P):
+    if P == O:
+        return True
+    x, y = P
+    return (y * y - (x * x * x + a * x + b)) % p == 0
+
+def generate_points():
+    points = []
+    for x in range(p):
+        rhs = (x**3 + a*x + b) % p
+        for y in range(p):
+            if (y*y) % p == rhs:
+                points.append((x, y))
+    points.append(O)
+    return points
+
+def point_add(P, Q):
+    if P == O:
+        return Q
+    if Q == O:
+        return P
+
+    x1, y1 = P
+    x2, y2 = Q
+
+    if x1 == x2 and (y1 + y2) % p == 0:
+        return O
+
+    try:
+        if P == Q:
+            m = (3 * x1 * x1 + a) * inverse_mod(2 * y1, p) % p
+        else:
+            m = (y2 - y1) * inverse_mod(x2 - x1, p) % p
+    except:
+        return O
+
+    x3 = (m * m - x1 - x2) % p
+    y3 = (m * (x1 - x3) - y1) % p
+
+    return (x3, y3)
+
+def scalar_mult(k, P):
+    R = O
+    while k > 0:
+        if k % 2 == 1:
+            R = point_add(R, P)
+        P = point_add(P, P)
+        k //= 2
+    return R
+
+points = generate_points()
+print("\nAll points on curve:")
+print(points)
+
+# Input base point
+gx = int(input("\nEnter base point Gx: "))
+gy = int(input("Enter base point Gy: "))
+G = (gx, gy)
+
+if not is_on_curve(G):
+    print("Error: G is not on the curve!")
+    exit()
+
+# Private key
+d = int(input("Enter private key: "))
+
+# Public key
+Q = scalar_mult(d, G)
+print("Public Key:", Q)
+
+# Message point
+mx = int(input("Enter message point x: "))
+my = int(input("Enter message point y: "))
+M = (mx, my)
+
+if not is_on_curve(M):
+    print("Error: Message point is not on curve!")
+    exit()
+
+# Encryption
+k = int(input("Enter random k: "))
+C1 = scalar_mult(k, G)
+C2 = point_add(M, scalar_mult(k, Q))
+
+print("\nCipher Text:")
+print("C1 =", C1)
+print("C2 =", C2)
+
+# Decryption
+S = scalar_mult(d, C1)
+x, y = S
+S_inv = (x, (-y) % p)
+
+M_dec = point_add(C2, S_inv)
+
+print("\nDecrypted Message:", M_dec)
+
+============================================================
+FILE: ElGamal_Ds.py
+============================================================
+
+def mod_inverse(a, m):
+    for i in range(1, m):
+        if (a * i) % m == 1:
+            return i
+    return -1
+
+p = int(input("Enter prime p: "))
+g = int(input("Enter generator g: "))
+x = int(input("Enter private key x: "))
+m = int(input("Enter message (integer): "))
+
+y = pow(g, x, p)
+
+k = int(input("Enter random k: "))
+while mod_inverse(k, p - 1) == -1:
+    k += 1
+
+r = pow(g, k, p)
+k_inv = mod_inverse(k, p - 1)
+
+s = (k_inv * (m - x * r)) % (p - 1)
+
+left = pow(g, m, p)
+right = (pow(y, r, p) * pow(r, s, p)) % p
+
+print("\n=== ElGamal ===")
+print("Public Key:", (p, g, y))
+print("Private Key:", x)
+print("Signature:", (r, s))
+print("Verification:", left == right)
+
+============================================================
+FILE: Euclidean.py
+============================================================
+
+a, b = map(int, input("Enter two numbers: ").split())
+a, b = abs(a), abs(b)
+
+if a < b:
+    a, b = b, a
+r1 = a
+r2 = b
+
+print("q\t r1\t r2\t r")
+
+while r2 != 0:
+    q = r1 // r2
+    r = r1 % r2
+    print(f"{q}\t {r1}\t {r2}\t {r}")
+    r1, r2 = r2, r
+
+print("\nGCD =", r1)
+
+============================================================
+FILE: Gcd_Extended.py
+============================================================
+
+a, b = map(int, input("Enter two numbers: ").split())
+A, B = a, b
+a, b = abs(a), abs(b)
+
+swapped = False
+if a < b:
+   a, b = b, a
+   swapped = True
+
+r1, r2 = a, b
+s1, s2 = 1, 0
+t1, t2 = 0, 1
+print("q\t r1\t r2\t r\t s1\t s2\t s\t t1\t t2\t t")
+
+while r2 != 0:
+   q = r1 // r2
+   r = r1 % r2
+   s = s1 - q * s2
+   t = t1 - q * t2
+   print(f"{q}\t {r1}\t {r2}\t {r}\t {s1}\t {s2}\t {s}\t {t1}\t {t2}\t {t}")
+   r1, r2 = r2, r
+   s1, s2 = s2, s
+   t1, t2 = t2, t
+
+if swapped:
+   s1, t1 = t1, s1
+
+print("\nGCD =", r1)
+print("s =", s1)
+print("t =", t1)
+print(f"\nCheck: {s1}*({A}) + {t1}*({B}) = {s1*A + t1*B}")
+
+============================================================
+FILE: HillCIipher_V2.py
+============================================================
+
+M = 26
+ALPH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def text_to_nums(text):
+    nums = [ALPH.index(c) for c in text.upper() if c.isalpha()]
+    print("Text → nums:", nums)
+    return nums
+
+def nums_to_text(nums):
+    text = ''.join(ALPH[n % M] for n in nums)
+    print("Nums → text:", nums, "→", text)
+    return text
+
+def pad(nums, n):
+    while len(nums) % n != 0:
+        nums.append(ALPH.index('X'))
+    return nums
+
+def mat_mul(A, B):
+    rA, cA = len(A), len(A[0])
+    rB, cB = len(B), len(B[0])
+    if cA != rB:
+        raise ValueError("Incompatible sizes for multiplication")
+    R = [[0]*cB for _ in range(rA)]
+    for i in range(rA):
+        for j in range(cB):
+            s = 0
+            for k in range(cA):
+                s += A[i][k] * B[k][j]
+            R[i][j] = s % M
+    return R
+
+def mat_det(A):
+    n = len(A)
+    if n == 1:
+        return A[0][0]
+    if n == 2:
+        return A[0][0]*A[1][1] - A[0][1]*A[1][0]
+    det = 0
+    for j in range(n):
+        minor = [row[:j] + row[j+1:] for row in A[1:]]
+        det += ((-1)**j) * A[0][j] * mat_det(minor)
+    return det
+
+def mat_minor(A, r, c):
+    return [row[:c] + row[c+1:] for i, row in enumerate(A) if i != r]
+
+def mat_cofactor(A):
+    n = len(A)
+    C = [[0]*n for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            minor = mat_minor(A, i, j)
+            C[i][j] = ((-1)**(i+j)) * mat_det(minor)
+    return C
+
+def mat_transpose(A):
+    return [list(row) for row in zip(*A)]
+
+def mat_inv(A):
+    det_raw = mat_det(A)
+    det_mod = det_raw % M
+    try:
+        det_inv = pow(det_mod, -1, M)
+    except ValueError:
+        raise ValueError(f"Determinant {det_mod} has no inverse modulo {M}. Matrix not invertible.")
+    C = mat_cofactor(A)
+    adj = mat_transpose(C)
+    inv = [[(det_inv * adj[i][j]) % M for j in range(len(A))] for i in range(len(A))]
+
+    print("Determinant (raw):", det_raw)
+    print("Determinant mod", M, ":", det_mod)
+    print("Determinant inverse mod", M, ":", det_inv)
+    print("Cofactor matrix (nested lists):", C)
+    print("Adjugate matrix (nested lists):", adj)
+    print("Inverse matrix mod", M, ":", inv)
+    return inv
+
+def encrypt(plain, key):
+    n = len(key)
+    nums = pad(text_to_nums(plain), n)
+    out = []
+    for i in range(0, len(nums), n):
+        block = nums[i:i+n]
+        block_mat = [[x] for x in block]
+        enc = mat_mul(key, block_mat)
+        enc_flat = [row[0] for row in enc]
+        print(f"Encrypt block {i//n}: {block} -> {enc_flat}")
+        out.extend(enc_flat)
+    cipher_text = nums_to_text(out)
+    return cipher_text
+
+def decrypt(cipher, key):
+    n = len(key)
+    nums = text_to_nums(cipher)
+    inv = mat_inv(key)
+    out = []
+    for i in range(0, len(nums), n):
+        block = nums[i:i+n]
+        block_mat = [[x] for x in block]
+        dec = mat_mul(inv, block_mat)
+        dec_flat = [row[0] for row in dec]
+        print(f"Decrypt block {i//n}: {block} -> {dec_flat}")
+        out.extend(dec_flat)
+    plain_text = nums_to_text(out)
+    return plain_text
+
+n = int(input("Enter n : "))
+print(f"Enter {n*n} numbers row-wise for the key matrix:")
+vals = list(map(int, input().split()))
+if len(vals) != n*n:
+    raise ValueError(f"Expected {n*n} numbers, got {len(vals)}")
+key = [vals[i*n:(i+1)*n] for i in range(n)]
+
+plain = input("Enter plaintext: ")
+
+cipher = encrypt(plain, key)
+print("\nCiphertext:", cipher)
+
+print("\nDecrypted :", decrypt(cipher, key))
+
+============================================================
+FILE: HillCipher_V1.py
+============================================================
+
+M = 26
+ALPH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def text_to_nums(text):
+   nums = []
+   for c in text.upper():
+       if c.isalpha():
+           nums.append(ALPH.index(c))
+   return nums
+
+def nums_to_text(nums):
+   text = ''
+   for n in nums:
+       text += ALPH[n % M]
+   return text
+
+
+def mat_det(A):
+   return A[0][0]*A[1][1] - A[0][1]*A[1][0]
+
+def mat_cofactor(A):
+   return [[A[1][1], -A[0][1]], [-A[1][0], A[0][0]]]
+
+def find_inv_det(d):
+   d = d % M
+   for i in range(1, M):
+       if (d * i) % M == 1:
+           return i
+   return None
+
+
+def mat_mul(A, B):
+   rA = len(A)
+   cB = len(B[0])
+   R = []
+   for _ in range(rA):
+       row = []
+       for _ in range(cB):
+           row.append(0)
+       R.append(row)
+   for i in range(rA):
+       for j in range(cB):
+           s = 0
+           for k in range(len(A[0])):
+               s += A[i][k] * B[k][j]
+           R[i][j] = s % M
+   return R
+
+def mat_transpose(A):
+   transposed = []
+   for row in zip(*A):
+       transposed.append(list(row))
+   return transposed
+
+def mat_inv(A):
+   det = mat_det(A) % M
+   det_inv = pow(det, -1, M)
+   C = mat_cofactor(A)
+   adj = mat_transpose(C)
+   return [[(det_inv * adj[i][j]) % M for j in range(len(A))] for i in range(len(A))]
+def pad(nums, n):
+   while len(nums) % n != 0:
+       nums.append(ALPH.index('X'))
+   return nums
+
+def encrypt(plain, key):
+   n = len(key)
+   nums = pad(text_to_nums(plain), n)
+   out = []
+   for i in range(0, len(nums), n):
+       block = []
+       for x in nums[i:i+n]:
+           block.append([x])
+       enc = mat_mul(key, block)
+       for row in enc:
+           out.append(row[0])
+   return nums_to_text(out)
+
+def decrypt(cipher, key):
+   n = len(key)
+   nums = text_to_nums(cipher)
+   inv = mat_inv(key)
+   out = []
+   for i in range(0, len(nums), n):
+       block = []
+       for x in nums[i:i+n]:
+           block.append([x])
+       dec = mat_mul(inv, block)
+       for row in dec:
+           out.append(row[0])
+   return nums_to_text(out)
+
+n = int(input("Enter n : "))
+print(f"Enter {n*n} numbers row-wise for the key matrix:")
+vals = list(map(int, input().split()))
+key = [vals[i*n:(i+1)*n] for i in range(n)]
+
+plain = input("Enter plaintext: ")
+cipher = encrypt(plain, key)
+
+print("\nCiphertext:", cipher)
+print("Decrypted :", decrypt(cipher, key))
+
+============================================================
+FILE: ManInMid.py
+============================================================
+
+p = int(input("Enter prime number (p): "))
+g = int(input("Enter primitive root (g): "))
+
+a = int(input("Alice private key: "))
+b = int(input("Bob private key: "))
+m = int(input("Mallory private key: "))
+
+A = pow(g, a, p)
+B = pow(g, b, p)
+M = pow(g, m, p)
+
+print("\n--- Mallory intercepts communication ---")
+
+print("Alice sends A =", A, "but Mallory intercepts it")
+print("Bob sends B =", B, "but Mallory intercepts it")
+
+print("\nMallory sends M to Alice and Bob:", M)
+
+alice_key = pow(M, a, p)
+bob_key = pow(M, b, p)
+
+mallory_key_A = pow(A, m, p)
+mallory_key_B = pow(B, m, p)
+
+print("\nShared Keys:")
+print("Alice thinks key =", alice_key)
+print("Bob thinks key =", bob_key)
+
+print("\nMallory's Keys:")
+print("Mallory-Alice key =", mallory_key_A)
+print("Mallory-Bob key =", mallory_key_B)
+
+============================================================
+FILE: MD5.py
+============================================================
+
+import hashlib
+import time
+
+message = input("Enter message: ")
+key = input("Enter secret key: ")
+
+data = key + message
+
+start = time.time()
+
+mac1 = hashlib.md5(data.encode()).hexdigest()
+
+if len(message) > 0:
+    modified_message = message[:-1] + chr((ord(message[-1]) + 1) % 256)
+else:
+    modified_message = "a"
+
+data2 = key + modified_message
+mac2 = hashlib.md5(data2.encode()).hexdigest()
+
+end = time.time()
+
+bin1 = bin(int(mac1, 16))[2:].zfill(128)
+bin2 = bin(int(mac2, 16))[2:].zfill(128)
+
+changed_bits = sum(b1 != b2 for b1, b2 in zip(bin1, bin2))
+avalanche_percent = (changed_bits / 128) * 100
+
+print("\n=== MD5 MAC ===")
+print("Original MAC :", mac1)
+print("Modified MAC :", mac2)
+print("Time taken:", end - start, "seconds")
+
+print("\n=== Avalanche Effect ===")
+print("Changed bits:", changed_bits, "/ 128")
+print("Avalanche Effect: {:.2f}%".format(avalanche_percent))
+
+============================================================
+FILE: ModularMatrixInverse.py
+============================================================
+
+def mat_det(A):
+    if len(A) == 1:
+        return A[0][0]
+    if len(A) == 2:
+        return A[0][0] * A[1][1] - A[0][1] * A[1][0]
+    det = 0
+    for j in range(len(A)):
+        minor = []
+        for row in A[1:]:
+            minor.append(row[:j] + row[j+1:])
+        det += ((-1) ** j) * A[0][j] * mat_det(minor)
+    return det
+
+def mat_minor(A, r, c):
+    minor = []
+    for i, row in enumerate(A):
+        if i != r:
+            minor.append(row[:c] + row[c+1:])
+    return minor
+
+def mat_cofactor(A):
+    n = len(A)
+    C = [[0] * n for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            C[i][j] = ((-1) ** (i + j)) * mat_det(mat_minor(A, i, j))
+    return C
+
+def mat_transpose(A):
+    transposed = []
+    for row in zip(*A):
+        transposed.append(list(row))
+    return transposed
+
+def modular_matrix_inverse(A, M):
+    det = mat_det(A) % M
+    det_inv = pow(det, -1, M)
+    C = mat_cofactor(A)
+    adj = mat_transpose(C)
+    return [[(det_inv * adj[i][j]) % M for j in range(len(A))] for i in range(len(A))]
+
+if __name__ == "__main__":
+    n = int(input("Enter n (matrix size): "))
+    M = int(input("Enter modulus M: "))
+    print(f"Enter {n*n} numbers row-wise for the matrix:")
+    vals = list(map(int, input().split()))
+    A = [vals[i*n:(i+1)*n] for i in range(n)]
+    try:
+        inv = modular_matrix_inverse(A, M)
+        print("Inverse matrix:")
+        for row in inv:
+            print(row)
+    except ValueError:
+        print("Matrix is not invertible modulo", M)
+
+============================================================
+FILE: PlayfairCipher.py
+============================================================
+
+def generate_matrix(key):
+    key = key.upper().replace("J", "I")
+    matrix = []
+    used = set()
+
+    # Add key letters first
+    for ch in key:
+        if ch.isalpha() and ch not in used:
+            matrix.append(ch)
+            used.add(ch)
+
+    # Add remaining alphabet letters
+    for ch in "ABCDEFGHIKLMNOPQRSTUVWXYZ":  # J excluded
+        if ch not in used:
+            matrix.append(ch)
+
+    # Convert into 5x5 matrix
+    return [matrix[i:i+5] for i in range(0, 25, 5)]
+
+
+def prepare_text(text):
+    text = text.upper().replace("J", "I")
+    text = "".join([c for c in text if c.isalpha()])
+
+    result = ""
+    i = 0
+    while i < len(text):
+        a = text[i]
+        b = ""
+
+        if i + 1 < len(text):
+            b = text[i+1]
+
+        if a == b:
+            result += a + "X"
+            i += 1
+        else:
+            if b:
+                result += a + b
+                i += 2
+            else:
+                result += a + "X"
+                i += 1
+
+    if len(result) % 2 != 0:
+        result += "X"
+
+    return result
+
+
+def find_position(matrix, ch):
+    for r in range(5):
+        for c in range(5):
+            if matrix[r][c] == ch:
+                return r, c
+
+
+def playfair_encrypt(text, matrix):
+    text = prepare_text(text)
+    cipher = ""
+
+    for i in range(0, len(text), 2):
+        a, b = text[i], text[i+1]
+        r1, c1 = find_position(matrix, a)
+        r2, c2 = find_position(matrix, b)
+
+        if r1 == r2:  # Same row
+            cipher += matrix[r1][(c1+1)%5]
+            cipher += matrix[r2][(c2+1)%5]
+        elif c1 == c2:  # Same column
+            cipher += matrix[(r1+1)%5][c1]
+            cipher += matrix[(r2+1)%5][c2]
+        else:  # Rectangle rule
+            cipher += matrix[r1][c2]
+            cipher += matrix[r2][c1]
+
+    return cipher
+
+
+def playfair_decrypt(cipher, matrix):
+    text = cipher
+    plain = ""
+
+    for i in range(0, len(text), 2):
+        a, b = text[i], text[i+1]
+        r1, c1 = find_position(matrix, a)
+        r2, c2 = find_position(matrix, b)
+
+        if r1 == r2:
+            plain += matrix[r1][(c1-1)%5]
+            plain += matrix[r2][(c2-1)%5]
+        elif c1 == c2:
+            plain += matrix[(r1-1)%5][c1]
+            plain += matrix[(r2-1)%5][c2]
+        else:
+            plain += matrix[r1][c2]
+            plain += matrix[r2][c1]
+
+    return plain
+
+
+key = input("Enter key: ")
+text = input("Enter message: ")
+
+matrix = generate_matrix(key)
+
+print("\nKey Matrix:")
+for row in matrix:
+    print(row)
+
+encrypted = playfair_encrypt(text, matrix)
+print("\nEncrypted:", encrypted)
+
+decrypted = playfair_decrypt(encrypted, matrix)
+print("Decrypted:", decrypted)
+
+============================================================
+FILE: Primitive-Root.py
+============================================================
+
+import math
+
+# Prime checking function
+def is_prime(n):
+    if n <= 1:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+
+# Primitive roots function
+def primitive_roots(p):
+    print("Primitive roots are:")
+    
+    for g in range(2, p):
+        values = []
+        
+        for i in range(1, p):
+            values.append((pow(g, i, p)))
+        
+        if len(set(values)) == p - 1:
+            print(g, end=" ")
+
+
+p = int(input("Enter a prime number: "))
+
+if is_prime(p):
+    primitive_roots(p)
+else:
+    print("Not a prime number")
+
+============================================================
+FILE: RSA_Ds.py
+============================================================
+
+def mod_inverse(a, m):
+    for i in range(1, m):
+        if (a * i) % m == 1:
+            return i
+    return -1
+
+p = int(input("Enter prime p: "))
+q = int(input("Enter prime q: "))
+m = int(input("Enter message (integer): "))
+
+n = p * q
+phi = (p - 1) * (q - 1)
+
+e = int(input("Enter public exponent e: "))
+d = mod_inverse(e, phi)
+
+signature = pow(m, d, n)
+verify = pow(signature, e, n)
+
+print("\n=== RSA ===")
+print("Public Key:", (e, n))
+print("Private Key:", (d, n))
+print("Signature:", signature)
+print("Verification:", verify == m)
+
+============================================================
+FILE: RSA.py
+============================================================
+
+def main():
+    print("Enter first prime number (p):")
+    p = int(input())
+
+    print("Enter second prime number (q):")
+    q = int(input())
+
+    n = p * q
+    phi = (p - 1) * (q - 1)
+
+    print("Enter public exponent (e) [must be coprime to phi]:")
+    e = int(input())
+    d = pow(e, -1, phi)
+
+    print(f"Public Key: {{e={e}, n={n}}}")
+    print(f"Private Key: {{d={d}, n={n}}}")
+
+    print("\nEnter a message to encrypt:")
+    message = input()
+
+    encrypted = []
+    for ch in message:
+        encrypted.append(pow(ord(ch), e, n))
+
+    print("Encrypted Message:", encrypted)
+
+    decrypted = ""
+    for num in encrypted:
+        decrypted += chr(pow(num, d, n))
+
+    print("Decrypted Message:", decrypted)
+
+if __name__ == "__main__":
+    main()
+
+============================================================
+FILE: SHA-512.py
+============================================================
+
+import hashlib
+import time
+
+message = input("Enter message: ")
+key = input("Enter secret key: ")
+
+data = key + message  
+
+start = time.time()
+
+mac = hashlib.sha512(data.encode()).hexdigest()
+
+end = time.time()
+
+print("\n=== SHA-512 MAC ===")
+print("MAC:", mac)
+print("Time taken:", end - start, "seconds")
+
+============================================================
+FILE: SubstitutionCipher.py
+============================================================
+
+def encrypt(msg, b):
+    msg = msg.upper()
+    r = ""
+    for ch in msg:
+        if ch.isalpha():
+            p = ord(ch) - 65
+            c = (p + b) % 26
+            r += chr(c + 65)
+        else:
+            r += ch
+    return r
+
+def decrypt(msg, b):
+    msg = msg.upper()
+    r = ""
+    for ch in msg:
+        if ch.isalpha():
+            c = ord(ch) - 65
+            p = (c - b) % 26
+            r += chr(p + 65)
+        else:
+            r += ch
+    return r
+
+print("Substitution Cipher (Caesar Cipher)")
+print("Enter the message to encrypt/decrypt:")
+t = input()
+print("Enter the shift value (integer):") % 26
+b = int(input())
+e = encrypt(t, b)
+print("Encrypted message:")
+print(e)
+d = decrypt(e, b)
+print("Decrypted message:")
+print(d)
+
+============================================================
+FILE: Vigenèr.py
+============================================================
+
+def generate_key(text, key):
+    key = list(key)
+    if len(text) == len(key):
+        return key
+    else:
+        for i in range(len(text) - len(key)):
+            key.append(key[i % len(key)])
+    return "".join(key)
+
+
+def encrypt(text, key):
+    cipher = ""
+
+    for i in range(len(text)):
+        p = ord(text[i]) - ord('A')
+        k = ord(key[i]) - ord('A')
+
+        c = (p + k) % 26
+        cipher += chr(c + ord('A'))
+
+    return cipher
+
+
+def decrypt(cipher, key):
+    text = ""
+
+    for i in range(len(cipher)):
+        c = ord(cipher[i]) - ord('A')
+        k = ord(key[i]) - ord('A')
+
+        p = (c - k) % 26
+        text += chr(p + ord('A'))
+
+    return text
+
+
+# Input
+plaintext = input("Enter plaintext: ").upper()
+key = input("Enter key: ").upper()
+
+key = generate_key(plaintext, key)
+
+cipher = encrypt(plaintext, key)
+print("Ciphertext:", cipher)
+
+decrypted = decrypt(cipher, key)
+print("Decrypted text:", decrypted)
