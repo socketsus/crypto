@@ -25,7 +25,7 @@ def decrypt(msg, b):
 print("Substitution Cipher (Caesar Cipher)")
 print("Enter the message to encrypt/decrypt:")
 t = input()
-print("Enter the shift value (integer):")
+print("Enter the shift value (integer):") % 26
 b = int(input())
 e = encrypt(t, b)
 print("Encrypted message:")
